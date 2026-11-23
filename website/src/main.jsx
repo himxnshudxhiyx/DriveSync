@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './style.css'
 
+const DOWNLOAD = 'https://github.com/himxnshudxhiyx/DriveSync/releases/latest/download/DriveSync.dmg'
+const INSTALL_HELP = 'https://github.com/himxnshudxhiyx/DriveSync#install'
 const UPDATED = "November 23, 2026 (two-way sync)"
 
 function Nav() {
@@ -11,6 +13,7 @@ function Nav() {
       <nav>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
+        <a className="nav-dl" href={DOWNLOAD}>Download</a>
       </nav>
     </header>
   )
@@ -46,7 +49,11 @@ function Home() {
           Pick a folder on your Mac. Anything you add or change is kept in sync with the matching folder in your
           Google Drive, both ways, quietly, from the menu bar.
         </p>
-        <p className="meta">Free · macOS 14 Sonoma or later</p>
+        <a className="download" href={DOWNLOAD}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 20h14" /></svg>
+          Download for Mac
+        </a>
+        <p className="meta">Free · macOS 14 Sonoma or later · Apple Silicon &amp; Intel · <a href={INSTALL_HELP}>Install help</a></p>
         <img className="shot" src="/dropdown.png" alt="The DriveSync menu open in the macOS menu bar, showing synced folders and recent uploads" />
       </section>
 
@@ -64,6 +71,7 @@ function Home() {
           <li><b>Start syncing.</b> That’s it. DriveSync starts with your Mac and keeps the folder backed up.</li>
         </ol>
         <img className="shot" src="/link.png" alt="The DriveSync 'Link a folder' window" />
+        <p className="cta"><a className="download" href={DOWNLOAD}>Download DriveSync</a></p>
       </section>
     </main>
   )
