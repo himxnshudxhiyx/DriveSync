@@ -57,9 +57,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         place()
         panel.makeKeyAndOrderFront(nil)
         item.button?.highlight(true)
-        // A click anywhere outside the app closes the panel, like a real menu.
+        // A click anywhere outside the app closes the panel, like a real menu. Clicks on our own icon are
+        // skipped here (newer macOS reports them globally too); toggle() closes the panel for those.
         clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { _ in
-            Task { @MainActor in StatusController.shared.close() }
+            Task { @MainActor in
+                let c = StatusController.shared
+                if c.item.button?.window?.frame.contains(NSEvent.mouseLocation) == true { return }
+                c.close()
+            }
         }
     }
 
