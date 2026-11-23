@@ -1,0 +1,5 @@
+.build/
+build/
+google.env
+.vscode/
+.DS_Store
