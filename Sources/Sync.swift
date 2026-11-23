@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Network
 import os
 
@@ -89,6 +90,8 @@ private func patterns(_ link: Link) -> [String] {
     private var running = false
     private var changeToken: String?
     private var timers: [Timer] = []
+    private var badgeUpdates: AnyCancellable?
+    private var lastBadges = Data()
     private var stream: FSEventStreamRef?
     private let monitor = NWPathMonitor()
 
@@ -139,7 +142,48 @@ private func patterns(_ link: Link) -> [String] {
             Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in Task { @MainActor in await Sync.shared.checkDrive() } },
             Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in Task { @MainActor in Sync.shared.syncAll(remote: true) } },
         ]
+        // Keep Finder badges current: at most twice a second, after the change has landed.
+        badgeUpdates = objectWillChange.throttle(for: .milliseconds(500), scheduler: RunLoop.main, latest: true).sink { _ in
+            DispatchQueue.main.async { Sync.shared.publishBadges() }
+        }
+        publishBadges()
         syncAll(remote: true)
+    }
+
+    /// Writes every linked item's badge (synced / syncing / error) for the Finder extension and pings it.
+    /// A folder shows the most urgent state of anything inside it.
+    func publishBadges() {
+        let rank = ["synced": 0, "syncing": 1, "error": 2]
+        var out: [String: [String: String]] = [:]
+        for l in links where l.enabled {
+            var m: [String: String] = [:]
+            func mark(_ rel: String, _ state: String, up: Bool) {
+                var r = rel
+                while true {
+                    if m[r].map({ rank[state]! > rank[$0]! }) ?? true { m[r] = state }
+                    guard up, !r.isEmpty else { return }
+                    r = (r as NSString).deletingLastPathComponent
+                }
+            }
+            for rel in l.folders.keys { mark(rel, "synced", up: false) }
+            for (rel, e) in l.files where e.size >= 0 { mark(rel, "synced", up: false) }
+            for j in queue + [current].compactMap({ $0 }) where j.link == l.id && j.kind != .trashRemote {
+                mark(j.rel, "syncing", up: true)
+            }
+            let prefix = l.id.uuidString + "/"
+            for (key, f) in failures where key.hasPrefix(prefix) && f.attempts >= 3 {
+                mark(String(key.dropFirst(prefix.count)), "error", up: true)
+            }
+            if failures[l.id.uuidString] != nil || failures["drive:" + l.id.uuidString] != nil { mark("", "error", up: false) }
+            out[l.localPath] = m
+        }
+        let enc = JSONEncoder()
+        enc.outputFormatting = .sortedKeys
+        guard let data = try? enc.encode(out), data != lastBadges else { return }
+        lastBadges = data
+        try? data.write(to: stateFile.deletingLastPathComponent().appending(path: "badges.json"), options: .atomic)
+        DistributedNotificationCenter.default().postNotificationName(.init("app.drivesync.mac.badges"), object: nil,
+                                                                     userInfo: nil, deliverImmediately: true)
     }
 
     // MARK: Actions

@@ -31,6 +31,9 @@ DriveSync lives in the menu bar (no Dock icon) and starts automatically when you
 - If a file changes on both sides, your Mac's version wins and Drive keeps the older one in its version history.
 - Deleted files go to the Trash, never straight to permanent deletion. Choose per folder whether deletions sync.
 - No servers and no analytics: files move directly between your Mac and Google.
+- Finder shows a badge on every synced file: green for synced, blue while syncing, orange when something needs
+  attention. If the badges don't appear, turn on DriveSync under System Settings → General → Login Items &
+  Extensions → Finder.
 
 ---
 

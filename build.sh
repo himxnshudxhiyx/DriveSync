@@ -20,6 +20,18 @@ cp "$BIN" "$APP/Contents/MacOS/"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 sed -e "s|__CLIENT_ID__|$GOOGLE_CLIENT_ID|" -e "s|__CLIENT_SECRET__|$GOOGLE_CLIENT_SECRET|" \
     Resources/Info.plist > "$APP/Contents/Info.plist"
+# Finder Sync extension (per-file badges). App extensions must be sandboxed; sign it before the app.
+EXT="$APP/Contents/PlugIns/DriveSyncFinder.appex"
+mkdir -p "$EXT/Contents/MacOS"
+SDK="$(xcrun --show-sdk-path)"
+for a in arm64 x86_64; do
+    xcrun swiftc -O -parse-as-library -application-extension -module-name DriveSyncFinder -sdk "$SDK" \
+        -target "$a-apple-macos14.0" -Xlinker -e -Xlinker _NSExtensionMain Extension/FinderSync.swift -o "build/finder-$a"
+done
+lipo -create build/finder-arm64 build/finder-x86_64 -output "$EXT/Contents/MacOS/DriveSyncFinder"
+rm build/finder-arm64 build/finder-x86_64
+cp Resources/FinderInfo.plist "$EXT/Contents/Info.plist"
+codesign --force --sign - --entitlements Resources/Finder.entitlements "$EXT"
 codesign --force --sign - "$APP"
 echo "Built $APP"
 

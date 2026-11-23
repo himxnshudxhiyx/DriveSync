@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import FinderSync
 import ServiceManagement
 
 /// Plain AppKit entry point: every window here is managed by hand (a SwiftUI App would open a stray window).
@@ -15,6 +16,7 @@ enum Main {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ n: Notification) {
         StatusController.shared.install()
+        FinderBadges.enableOnce()
         Sync.shared.start()
         if !Sync.shared.signedIn || Sync.shared.links.isEmpty { Windows.onboarding() }
     }
@@ -76,6 +78,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let x = min(max(icon.midX - size.width / 2, area.minX + 8), area.maxX - size.width - 8)
         panel.setFrame(NSRect(x: x, y: icon.minY - 6 - size.height, width: size.width, height: size.height), display: true)
         panel.invalidateShadow()
+    }
+}
+
+/// The bundled Finder Sync extension (Extension/FinderSync.swift) that badges each synced file.
+enum FinderBadges {
+    static let id = "app.drivesync.mac.finder"
+    static var enabled: Bool { FIFinderSyncController.isExtensionEnabled }
+    static func manage() { FIFinderSyncController.showExtensionManagementInterface() }
+
+    /// Register and switch the extension on the first time; after that it's the user's call in System Settings.
+    static func enableOnce() {
+        guard !UserDefaults.standard.bool(forKey: "finderBadgesSetUp"),
+              let ext = Bundle.main.builtInPlugInsURL?.appendingPathComponent("DriveSyncFinder.appex") else { return }
+        UserDefaults.standard.set(true, forKey: "finderBadgesSetUp")
+        Task.detached {
+            for args in [["-a", ext.path], ["-e", "use", "-i", id]] {
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+                p.arguments = args
+                try? p.run()
+                p.waitUntilExit()
+            }
+        }
     }
 }
 

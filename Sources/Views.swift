@@ -576,6 +576,12 @@ struct GeneralPane: View {
                 Toggle("Open DriveSync when I log in", isOn: $login)
                     .onChange(of: login) { _, on in LoginItem.set(on) }
                 Toggle("Pause syncing", isOn: $sync.paused)
+                LabeledContent("Sync badges in Finder") {
+                    HStack {
+                        Text(FinderBadges.enabled ? "On" : "Off").foregroundStyle(.secondary)
+                        Button("Manage…") { FinderBadges.manage() }
+                    }
+                }
                 Text("Syncing also pauses on its own in Low Power Mode, and when you're offline.")
                     .foregroundStyle(.secondary)
             }
