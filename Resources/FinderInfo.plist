@@ -7,8 +7,8 @@
     <key>CFBundleIdentifier</key><string>app.drivesync.mac.finder</string>
     <key>CFBundleExecutable</key><string>DriveSyncFinder</string>
     <key>CFBundlePackageType</key><string>XPC!</string>
-    <key>CFBundleShortVersionString</key><string>1.0</string>
-    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>1.1</string>
+    <key>CFBundleVersion</key><string>2</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSExtension</key>
     <dict>
